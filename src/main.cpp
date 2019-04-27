@@ -139,8 +139,8 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
 
 void createKeyListeners() {
     ControlsManager* cm = ControlsManager::getInstance();
-    cm->addBinding(MOVE_HORIZONTAL, new KeyboardButton(sf::Keyboard::A, sf::Keyboard::D));
-    cm->addBinding(MOVE_VERTICAL, new KeyboardButton(sf::Keyboard::W, sf::Keyboard::S));
+    cm->addBinding(ACCELERATE, new KeyboardButton(sf::Keyboard::W, sf::Keyboard::S));
+    cm->addBinding(TURN, new KeyboardButton(sf::Keyboard::D, sf::Keyboard::A));
 }
 
 int main() {
