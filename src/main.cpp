@@ -25,7 +25,7 @@ std::shared_ptr<Scene> scene;
 Collider *collider = ColliderFactory::getTwoPhaseCollider();
 
 void idle(float timeSinceStart,float timeSinceLastCall) {
-    scene->update(timeSinceLastCall, {});
+    scene->update(timeSinceLastCall);
     collider->updateCollision(scene.get());
 }
 
@@ -41,19 +41,19 @@ void resize(int newWidth, int newHeight) {
 
 void createLight() {
 
-    DirectionalLight directionalLight = DirectionalLight();
-    directionalLight.diffuseColor= chag::make_vector(0.50f,0.50f,0.50f);
-    directionalLight.specularColor= chag::make_vector(0.50f,0.50f,0.50f);
-    directionalLight.ambientColor= chag::make_vector(0.50f,0.50f,0.50f);
+    std::shared_ptr<DirectionalLight> directionalLight = std::make_shared<DirectionalLight>();
+    directionalLight->diffuseColor= chag::make_vector(0.50f,0.50f,0.50f);
+    directionalLight->specularColor= chag::make_vector(0.50f,0.50f,0.50f);
+    directionalLight->ambientColor= chag::make_vector(0.50f,0.50f,0.50f);
 
-    directionalLight.direction= -chag::make_vector(0.0f,-10.0f,0.0f);
+    directionalLight->direction= -chag::make_vector(0.0f,-10.0f,0.0f);
     scene->directionalLight = directionalLight;
 
-    PointLight pointLight;
-    pointLight.diffuseColor= chag::make_vector(0.50f,0.50f,0.50f);
-    pointLight.specularColor= chag::make_vector(0.00f,0.00f,0.00f);
-    pointLight.ambientColor= chag::make_vector(0.050f,0.050f,0.050f);
-    pointLight.position = chag::make_vector(18.0f, 3.0f, 0.0f);
+    std::shared_ptr<PointLight> pointLight = std::make_shared<PointLight>();
+    pointLight->diffuseColor= chag::make_vector(0.50f,0.50f,0.50f);
+    pointLight->specularColor= chag::make_vector(0.00f,0.00f,0.00f);
+    pointLight->ambientColor= chag::make_vector(0.050f,0.050f,0.050f);
+    pointLight->position = chag::make_vector(18.0f, 3.0f, 0.0f);
     scene->pointLights.push_back(pointLight);
 }
 
