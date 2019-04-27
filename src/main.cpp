@@ -15,12 +15,15 @@
 #include <components/PlayerController.h>
 #include "controls.h"
 #include <fstream>
+#include <ui/Menu.h>
 
 Renderer renderer;
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+bool isInMenu = true;
+HudRenderer *menuRenderer;
 TopDownCamera *camera;
 std::shared_ptr<Scene> scene;
 Collider *collider = ColliderFactory::getTwoPhaseCollider();
@@ -41,6 +44,9 @@ void display(float timeSinceStart,float timeSinceLastCall) {
 
 // Called when the window gets resized
 void resize(int newWidth, int newHeight) {
+    if(isInMenu) {
+        //menuRenderer->updateLayout();
+    }
     renderer.resize(newWidth, newHeight);
 }
 
@@ -62,7 +68,14 @@ void createLight() {
     scene->pointLights.push_back(pointLight);
 }
 
+void createKeyListeners() {
+    ControlsManager* cm = ControlsManager::getInstance();
+    cm->addBinding(ACCELERATE, new KeyboardButton(sf::Keyboard::W, sf::Keyboard::S));
+    cm->addBinding(TURN, new KeyboardButton(sf::Keyboard::D, sf::Keyboard::A));
+}
+
 void loadWorld() {
+    isInMenu = false;
     scene = std::make_shared<Scene>();
 
     std::shared_ptr<ShaderProgram> standardShader = ResourceManager::loadAndFetchShaderProgram(SIMPLE_SHADER_NAME, "", "");
@@ -82,6 +95,22 @@ void loadWorld() {
     gameObject->addCollidesWith(1);
 
     scene->addShadowCaster(gameObject);
+
+    createLight();
+    createKeyListeners();
+}
+
+void loadMenu() {
+    scene = std::make_shared<Scene>();
+
+    auto menuBg = ResourceManager::loadAndFetchTexture("../assets/menu/bubba_menu.png");
+
+    std::shared_ptr<GameObject> hudObj = std::make_shared<GameObject>();
+    menuRenderer = new HudRenderer();
+    Menu* menu = new Menu(menuBg.get(), []() { loadWorld(); });
+    menuRenderer->setLayout(menu);
+    hudObj->addRenderComponent(menuRenderer );
+    scene->addTransparentObject(hudObj);
 }
 
 std::vector<int> split(const std::string &str) {
@@ -136,12 +165,6 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
     }
 }
 
-void createKeyListeners() {
-    ControlsManager* cm = ControlsManager::getInstance();
-    cm->addBinding(ACCELERATE, new KeyboardButton(sf::Keyboard::W, sf::Keyboard::S));
-    cm->addBinding(TURN, new KeyboardButton(sf::Keyboard::D, sf::Keyboard::A));
-}
-
 int main() {
 
     Logger::addLogHandler(new StdOutLogHandler());
@@ -159,9 +182,7 @@ int main() {
 
     camera = new TopDownCamera(chag::make_vector(-25.0f, 0.0f, -25.0f), SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    loadWorld();
-    createLight();
-    createKeyListeners();
+    loadMenu();
 
     win->start(60);
 
