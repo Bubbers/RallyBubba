@@ -59,7 +59,7 @@ void createLight() {
 
 void loadWorld() {
     std::shared_ptr<ShaderProgram> standardShader = ResourceManager::loadAndFetchShaderProgram(SIMPLE_SHADER_NAME, "", "");
-    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/bubba.obj");
+    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/johancar.obj");
 
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
     gameObject->addComponent(new PlayerController());
@@ -109,7 +109,7 @@ int main() {
     Logger::addLogHandler(new StdOutLogHandler());
     Logger::setLogLevel(LogLevel::INFO);
 
-    Window* win = new Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Halls of Bubba");
+    Window* win = new Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Bubba Fing Racer");
 
     // Setup callbacks for window events
     win->setResizeMethod(resize);
