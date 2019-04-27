@@ -213,7 +213,7 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
             } else if (tile == 'C'){
                 createCheckpoint(standardShader, x, y);
                 createTile(standardShader, y, x, asphaltMesh, has_wind);
-            } else if (tile == 'E'){
+            } else if (tile == 'G'){
                 createGoal(standardShader, x, y);
                 createTile(standardShader, y, x, asphaltMesh, has_wind);
             }
@@ -239,7 +239,7 @@ void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int 
 }
 
 void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y) {
-    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/revive.fbx");
+    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/goal.obj");
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
 
     const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
