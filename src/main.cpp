@@ -14,6 +14,7 @@
 #include <KeyboardButton.h>
 #include <components/PlayerController.h>
 #include "controls.h"
+#include <fstream>
 
 Renderer renderer;
 
@@ -24,7 +25,9 @@ TopDownCamera *camera;
 std::shared_ptr<Scene> scene;
 Collider *collider = ColliderFactory::getTwoPhaseCollider();
 
-void idle(float timeSinceStart,float timeSinceLastCall) {
+void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader);
+
+void idle(float timeSinceStart, float timeSinceLastCall) {
     scene->update(timeSinceLastCall);
     collider->updateCollision(scene.get());
 }
@@ -63,7 +66,7 @@ void loadWorld() {
 
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
     gameObject->addComponent(new PlayerController());
-    gameObject->setLocation(chag::make_vector(0.0f, 0.0f, 0.0f));
+    gameObject->setLocation(chag::make_vector(0.0f, 0.0f, 5.0f));
     StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
     gameObject->addRenderComponent(stdrenderer);
     gameObject->setDynamic(true);
@@ -74,28 +77,64 @@ void loadWorld() {
     scene->addShadowCaster(gameObject);
 
     // Ground mesh
-    std::shared_ptr<Mesh> floorMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/floor.obj");
+    loadFloor(standardShader);
+}
 
-    std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(floorMesh);
-    floorObject->setLocation(chag::make_vector(0.0f, 0.0f, 0.0f));
-    StandardRenderer* stdFloorRenderer = new StandardRenderer(floorMesh, standardShader);
-    floorObject->addRenderComponent(stdFloorRenderer);
+std::vector<int> split(std::string str, char delimiter) {
+    std::vector<int> internal;
+    std::stringstream ss(str);
+    std::string tok;
 
-    scene->addShadowCaster(floorObject);
+    while(getline(ss, tok, delimiter)) {
+        internal.push_back(std::stoi(tok));
+    }
 
-    // Door mesh
-    std::shared_ptr<Mesh> doorMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/door.obj");
+    return internal;
+}
 
-    std::shared_ptr<GameObject> doorObject = std::make_shared<GameObject>(doorMesh);
-    doorObject->setLocation(chag::make_vector(0.0f, 0.0f, 12.5f));
-    StandardRenderer* stdDoorRenderer = new StandardRenderer(doorMesh, standardShader);
-    doorObject->addRenderComponent(stdDoorRenderer);
-    doorObject->addComponent(new WinOnCollisionComponent());
-    doorObject->addCollidesWith(2);
-    doorObject->setIdentifier(1);
-    doorObject->setDynamic(true);
+void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
 
-    scene->addShadowCaster(doorObject);
+    std::vector<std::vector<int>> tiles;
+
+    std::ifstream file("../assets/map/map.txt");
+    if (file.is_open()) {
+        std::string line;
+        while (getline(file, line)) {
+            // using printf() in all tests for consistency
+            printf("%s\n", line.c_str());
+            tiles.push_back(split(line.c_str(), ' '));
+
+        }
+        file.close();
+    }
+
+    const float tileWidth = 2.0f;
+
+    std::shared_ptr<Mesh> asphaltMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/floor.obj");
+    std::shared_ptr<Mesh> grassMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/grass.obj");
+
+    for (int y = 0; y < tiles.size(); y++) {
+        for (int x = 0; x < tiles[y].size(); x++) {
+
+            std::shared_ptr<Mesh> mesh;
+
+            if (tiles[y][x] == 0 ) {
+                mesh = grassMesh;
+            } else {
+                mesh = asphaltMesh;
+            }
+
+            std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
+            StandardRenderer *stdFloorRenderer = new StandardRenderer(mesh, standardShader);
+            // The minus for x is needed as the x axis is flipped. For y we need it as we traverse top to down
+            chag::float3 startRenderingVector = chag::make_vector(25.0f, 0.0f, 25.0f);
+            floorObject->setLocation(startRenderingVector + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
+            floorObject->setScale(chag::make_vector(1.0f, 1.0f, 1.0f));
+            floorObject->addRenderComponent(stdFloorRenderer);
+
+            scene->addShadowCaster(floorObject);
+        }
+    }
 }
 
 void createKeyListeners() {
