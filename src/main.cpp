@@ -84,13 +84,13 @@ void loadWorld() {
     scene->addShadowCaster(gameObject);
 }
 
-std::vector<int> split(std::string str, char delimiter) {
+std::vector<int> split(const std::string &str) {
     std::vector<int> internal;
     std::stringstream ss(str);
     std::string tok;
 
-    while(getline(ss, tok, delimiter)) {
-        internal.push_back(std::stoi(tok));
+    for (char c : str) {
+        internal.push_back(c);
     }
 
     return internal;
@@ -102,7 +102,7 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
     if (file.is_open()) {
         std::string line;
         while (getline(file, line)) {
-            tiles.get()->push_back(split(line.c_str(), ' '));
+            tiles.get()->push_back(split(line));
         }
         file.close();
     }
@@ -115,7 +115,7 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
 
             std::shared_ptr<Mesh> mesh;
 
-            if ((*tiles.get())[y][x] == 0 ) {
+            if ((*tiles.get())[y][x] == '_' ) {
                 mesh = grassMesh;
             } else {
                 mesh = asphaltMesh;
