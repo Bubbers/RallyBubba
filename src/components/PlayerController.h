@@ -11,7 +11,7 @@
 class PlayerController : public MoveComponent{
 
 public:
-    PlayerController(std::shared_ptr<std::vector<std::vector<int>>> tiles, float tileWidth);
+    PlayerController(std::shared_ptr<std::vector<std::vector<char>>> tiles, float tileWidth);
 
     virtual void update(float dt);
 
@@ -27,7 +27,7 @@ private:
     chag::float3 original_front_vector = chag::make_vector(0.0f, 0.0f, 1.0f);
     chag::float3 front_vector = original_front_vector;
     float passiveSlowdown = 2.0f;
-    std::shared_ptr<std::vector<std::vector<int>>> tiles;
+    std::shared_ptr<std::vector<std::vector<char>>> tiles;
     float tileWidth;
 
     bool isOnAsphalt();

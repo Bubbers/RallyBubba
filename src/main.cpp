@@ -27,15 +27,45 @@ HudRenderer *menuRenderer;
 TopDownCamera *camera;
 std::shared_ptr<Scene> scene;
 Collider *collider = ColliderFactory::getTwoPhaseCollider();
-std::shared_ptr<std::vector<std::vector<int>>> tiles;
+std::shared_ptr<std::vector<std::vector<char>>> tiles;
 const float tileWidth = 2.0f;
 
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader);
+void updateWind();
 
 void idle(float timeSinceStart, float timeSinceLastCall) {
     scene->update(timeSinceLastCall);
     collider->updateCollision(scene.get());
+    updateWind();
 }
+
+float lastWindChangeTime = 0;
+chag::float3 lastWindSpeed = chag::make_vector(0.0f, 0.0f, 0.0f);
+chag::float3 currentWindSpeed = chag::make_vector(0.0f, 0.0f, 0.0f);
+chag::float3 newWindSpeed = chag::make_vector(0.0f, 0.0f, 0.0f);
+
+sf::Clock clock1;
+
+void updateWind() {
+    float currentTime = clock1.getElapsedTime().asSeconds();
+    if (currentTime - lastWindChangeTime > 1.0f) {
+        lastWindChangeTime += 1;
+        lastWindSpeed = newWindSpeed;
+        float x = getRand(0, 1);
+        float y = getRand(0, 1);
+        float z = getRand(0, 1);
+
+        newWindSpeed.x = fabs(x * 2.0f - 1.0f);
+        newWindSpeed.y = fabs(y * 2.0f - 1.0f);
+        newWindSpeed.z = fabs(z * 2.0f - 1.0f);
+
+    }
+
+    currentWindSpeed = linearSmoothStep(lastWindSpeed, newWindSpeed, currentTime - lastWindChangeTime);
+    scene->setWind(std::make_shared<Wind>(currentWindSpeed));
+
+}
+
 
 // Called by the window mainloop
 void display(float timeSinceStart,float timeSinceLastCall) {
@@ -52,13 +82,23 @@ void resize(int newWidth, int newHeight) {
 
 void createLight() {
 
-    std::shared_ptr<DirectionalLight> directionalLight = std::make_shared<DirectionalLight>();
-    directionalLight->diffuseColor= chag::make_vector(0.50f,0.50f,0.50f);
-    directionalLight->specularColor= chag::make_vector(0.50f,0.50f,0.50f);
-    directionalLight->ambientColor= chag::make_vector(0.50f,0.50f,0.50f);
 
-    directionalLight->direction= -chag::make_vector(0.0f,-10.0f,0.0f);
+    std::shared_ptr<DirectionalLight> directionalLight = std::make_shared<DirectionalLight>();
+    directionalLight->diffuseColor= chag::make_vector(0.050f,0.050f,0.050f);
+    directionalLight->specularColor= chag::make_vector(0.050f,0.050f,0.050f);
+    directionalLight->ambientColor= chag::make_vector(0.050f,0.050f,0.050f);
+
+    directionalLight->direction= -chag::make_vector(200.0f,200.0f,0.0f);
     scene->directionalLight = directionalLight;
+//    scene->shadowMapCamera = new PerspectiveCamera(
+//            chag::make_vector(-200.0f, 200.0f, -200.0f),
+//            chag::make_vector(0.0f, 0.0f, 0.0f),
+//            chag::make_vector(0.0f, 1.0f, 0.0f),
+//            45,
+//            1.0f,
+//            1.0f,
+//            3000.0f
+//    );
 
     std::shared_ptr<PointLight> pointLight = std::make_shared<PointLight>();
     pointLight->diffuseColor= chag::make_vector(0.50f,0.50f,0.50f);
@@ -113,8 +153,8 @@ void loadMenu() {
     scene->addTransparentObject(hudObj);
 }
 
-std::vector<int> split(const std::string &str) {
-    std::vector<int> internal;
+std::vector<char> split(const std::string &str) {
+    std::vector<char> internal;
     std::stringstream ss(str);
     std::string tok;
 
@@ -126,7 +166,7 @@ std::vector<int> split(const std::string &str) {
 }
 
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
-    tiles = std::make_shared<std::vector<std::vector<int>>>();
+    tiles = std::make_shared<std::vector<std::vector<char>>>();
     std::ifstream file("../assets/map/map.txt");
     if (file.is_open()) {
         std::string line;
@@ -136,18 +176,26 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
         file.close();
     }
 
-    std::shared_ptr<Mesh> asphaltMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/floor.obj");
     std::shared_ptr<Mesh> grassMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/grass.obj");
+    std::shared_ptr<Mesh> asphaltMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/floor.obj");
+    std::shared_ptr<Mesh> mountainMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain.obj");
+    std::shared_ptr<Mesh> treeMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/tree.obj");
 
     for (int y = 0; y < tiles.get()->size(); y++) {
         for (int x = 0; x < ((*tiles.get())[y]).size(); x++) {
 
             std::shared_ptr<Mesh> mesh;
 
+            bool has_wind = false;
             if ((*tiles.get())[y][x] == '_' ) {
                 mesh = grassMesh;
-            } else {
+            } else if ((*tiles.get())[y][x] == '#'){
                 mesh = asphaltMesh;
+            } else if ((*tiles.get())[y][x] == '^'){
+                mesh = mountainMesh;
+            } else {
+                mesh = treeMesh;
+                has_wind = true;
             }
 
             std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
@@ -159,6 +207,13 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
             floorObject->setLocation(placementOffset + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
             floorObject->setScale(chag::make_vector(1.0f, 1.0f, 1.0f));
             floorObject->addRenderComponent(stdFloorRenderer);
+
+            if (has_wind) {
+                floorObject->setAffectedByWind(true);
+                floorObject->setMainBendiness(0.05);
+                floorObject->setBranchAmplitude(0.5);
+                floorObject->setLeafAmplitude(0.05);
+            }
 
             scene->addShadowCaster(floorObject);
         }

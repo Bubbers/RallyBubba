@@ -7,7 +7,7 @@
 #include "PlayerController.h"
 #include "linmath/float3x3.h"
 
-PlayerController::PlayerController(std::shared_ptr<std::vector<std::vector<int>>> tiles, float tileWidth) {
+PlayerController::PlayerController(std::shared_ptr<std::vector<std::vector<char>>> tiles, float tileWidth) {
     this->tiles = tiles;
     this->tileWidth = tileWidth;
 }
@@ -81,7 +81,7 @@ bool PlayerController::isOnAsphalt() {
     int x = (int)(-absoluteLocation.x / tileWidth);
     int y = (int)(-absoluteLocation.z / tileWidth);
 
-    int currentTile = (*tiles.get())[y][x];
+    char currentTile = (*tiles.get())[y][x];
 
-    return currentTile == 1;
+    return currentTile == '#';
 }
