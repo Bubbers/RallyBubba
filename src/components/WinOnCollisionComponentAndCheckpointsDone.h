@@ -4,11 +4,14 @@
 
 #include <IComponent.h>
 
-class WinOnCollisionComponent: public IComponent {
+class WinOnCollisionComponentAndCheckpointsDone: public IComponent {
 public:
-    WinOnCollisionComponent();
+    WinOnCollisionComponentAndCheckpointsDone(std::shared_ptr<std::vector<bool>> checkpoints);
     void beforeCollision(std::shared_ptr<GameObject> collider);
     void update(float dt);
+
+private:
+    std::shared_ptr<std::vector<bool>> checkpoints;
 };
 
 

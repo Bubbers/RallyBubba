@@ -7,7 +7,7 @@
 #include <Scene.h>
 #include <Window.h>
 #include <ColliderFactory.h>
-#include <components/WinOnCollisionComponent.h>
+#include <components/WinOnCollisionComponentAndCheckpointsDone.h>
 #include <Logger.h>
 #include <StdOutLogHandler.h>
 #include <ControlsManager.h>
@@ -16,6 +16,7 @@
 #include "controls.h"
 #include <fstream>
 #include <ui/Menu.h>
+#include "components/UnlockCheckpointOnCollisionComponent.h"
 
 Renderer renderer;
 
@@ -30,8 +31,16 @@ Collider *collider = ColliderFactory::getTwoPhaseCollider();
 std::shared_ptr<std::vector<std::vector<char>>> tiles;
 const float tileWidth = 2.0f;
 
+std::shared_ptr<std::vector<bool>> checkpoints = std::make_shared<std::vector<bool>>();
+
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader);
 void updateWind();
+
+void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<Mesh> &mesh,
+           bool has_wind);
+
+void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y);
+void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y);
 
 void idle(float timeSinceStart, float timeSinceLastCall) {
     scene->update(timeSinceLastCall);
@@ -123,19 +132,6 @@ void loadWorld() {
     // Ground mesh
     loadFloor(standardShader);
 
-    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/rally_car.obj");
-    std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
-    gameObject->addComponent(new PlayerController(tiles, tileWidth));
-    gameObject->setLocation(chag::make_vector(0.0f, 0.0f, 0.0f));
-    //gameObject->setScale(chag::make_vector(0.1f, 3.0f, 0.1f));
-    StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
-    gameObject->addRenderComponent(stdrenderer);
-    gameObject->setDynamic(true);
-    gameObject->setIdentifier(2);
-    gameObject->addCollidesWith(1);
-
-    scene->addShadowCaster(gameObject);
-
     createLight();
     createKeyListeners();
 }
@@ -165,6 +161,20 @@ std::vector<char> split(const std::string &str) {
     return internal;
 }
 
+void createPlayer(std::shared_ptr<ShaderProgram> standardShader, int x, int y){
+    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/rally_car.obj");
+    std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
+    gameObject->addComponent(new PlayerController(tiles, tileWidth));
+    gameObject->setLocation(chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
+    StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
+    gameObject->addRenderComponent(stdrenderer);
+    gameObject->setDynamic(true);
+    gameObject->setIdentifier(2);
+    gameObject->addCollidesWith(7);
+
+    scene->addShadowCaster(gameObject);
+}
+
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
     tiles = std::make_shared<std::vector<std::vector<char>>>();
     std::ifstream file("../assets/map/map.txt");
@@ -187,37 +197,83 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
             std::shared_ptr<Mesh> mesh;
 
             bool has_wind = false;
-            if ((*tiles.get())[y][x] == '_' ) {
-                mesh = grassMesh;
-            } else if ((*tiles.get())[y][x] == '#'){
-                mesh = asphaltMesh;
-            } else if ((*tiles.get())[y][x] == '^'){
-                mesh = mountainMesh;
-            } else {
-                mesh = treeMesh;
+            char &tile = (*tiles.get())[y][x];
+            if (tile == '_' ) {
+                createTile(standardShader, y, x, grassMesh, has_wind);
+            } else if (tile == '#'){
+                createTile(standardShader, y, x, asphaltMesh, has_wind);
+            } else if (tile == '^'){
+                createTile(standardShader, y, x, mountainMesh, has_wind);
+            } else if (tile == '$'){
                 has_wind = true;
+                createTile(standardShader, y, x, treeMesh, has_wind);
+            } else if (tile == 'S'){
+                createPlayer(standardShader, x, y);
+                createTile(standardShader, y, x, asphaltMesh, has_wind);
+            } else if (tile == 'C'){
+                createCheckpoint(standardShader, x, y);
+                createTile(standardShader, y, x, asphaltMesh, has_wind);
+            } else if (tile == 'E'){
+                createGoal(standardShader, x, y);
+                createTile(standardShader, y, x, asphaltMesh, has_wind);
             }
+        }
+    }
+}
 
-            std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
-            StandardRenderer *stdFloorRenderer = new StandardRenderer(mesh, standardShader);
+void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y) {
+    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/revive.fbx");
+    std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
 
-            // Placement offset is needed to get the corner of the tile to match the tiles grid coordinates
-            const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
-            // The minus for x is needed as the x axis is flipped. For y we need it as we traverse top to down
-            floorObject->setLocation(placementOffset + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
-            floorObject->setScale(chag::make_vector(1.0f, 1.0f, 1.0f));
-            floorObject->addRenderComponent(stdFloorRenderer);
+    const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
+    gameObject->setLocation(placementOffset + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
+    gameObject->update(0.0f);
+    StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
+    gameObject->addRenderComponent(stdrenderer);
+    gameObject->setIdentifier(7);
 
-            if (has_wind) {
+    gameObject->addComponent(new UnlockCheckpointOnCollisionComponent(checkpoints->size(), checkpoints));
+    checkpoints->push_back(false);
+
+    scene->addShadowCaster(gameObject);
+}
+
+void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y) {
+    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/revive.fbx");
+    std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
+
+    const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
+    gameObject->setLocation(placementOffset + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
+    gameObject->update(0.0f);
+    StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
+    gameObject->addRenderComponent(stdrenderer);
+    gameObject->setIdentifier(7);
+
+    gameObject->addComponent(new WinOnCollisionComponentAndCheckpointsDone(checkpoints));
+
+    scene->addShadowCaster(gameObject);
+}
+
+void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<Mesh> &mesh,
+           bool has_wind) {
+    std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
+    StandardRenderer *stdFloorRenderer = new StandardRenderer(mesh, standardShader);
+
+    // Placement offset is needed to get the corner of the tile to match the tiles grid coordinates
+    const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
+    // The minus for x is needed as the x axis is flipped. For y we need it as we traverse top to down
+    floorObject->setLocation(placementOffset + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
+    floorObject->setScale(chag::make_vector(1.0f, 1.0f, 1.0f));
+    floorObject->addRenderComponent(stdFloorRenderer);
+
+    if (has_wind) {
                 floorObject->setAffectedByWind(true);
                 floorObject->setMainBendiness(0.05);
                 floorObject->setBranchAmplitude(0.5);
                 floorObject->setLeafAmplitude(0.05);
             }
 
-            scene->addShadowCaster(floorObject);
-        }
-    }
+    scene->addShadowCaster(floorObject);
 }
 
 int main() {
