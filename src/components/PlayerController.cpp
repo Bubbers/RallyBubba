@@ -6,10 +6,25 @@
 #include <controls.h>
 #include "PlayerController.h"
 #include "linmath/float3x3.h"
+#include "RallyConstants.h"
 
 PlayerController::PlayerController(std::shared_ptr<std::vector<std::vector<char>>> tiles, float tileWidth) {
     this->tiles = tiles;
     this->tileWidth = tileWidth;
+}
+
+void PlayerController::beforeCollision(std::shared_ptr<GameObject> collider) {
+    if (collider->getIdentifier() == COLLIDABLE_AND_COLLISION_IDENTIFIER) {
+        std::shared_ptr<GameObject> owner_ptr = owner.lock();
+        owner_ptr->setLocation(locationAtLastUpdate);
+    }
+}
+
+void PlayerController::duringCollision(std::shared_ptr<GameObject> collider) {
+    if (collider->getIdentifier() == COLLIDABLE_AND_COLLISION_IDENTIFIER) {
+        std::shared_ptr<GameObject> owner_ptr = owner.lock();
+        owner_ptr->setLocation(locationAtLastUpdate);
+    }
 }
 
 void PlayerController::update(float dt) {
@@ -18,6 +33,7 @@ void PlayerController::update(float dt) {
     }
 
     std::shared_ptr<GameObject> owner_ptr = owner.lock();
+    locationAtLastUpdate = owner_ptr->getRelativeLocation();
 
     ControlsManager* cm = ControlsManager::getInstance();
     ControlStatus accelerationStatus = cm->getStatus(ACCELERATE);

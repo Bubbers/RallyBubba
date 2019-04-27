@@ -17,6 +17,7 @@
 #include <fstream>
 #include <ui/Menu.h>
 #include "components/UnlockCheckpointOnCollisionComponent.h"
+#include "RallyConstants.h"
 
 Renderer renderer;
 
@@ -36,8 +37,8 @@ std::shared_ptr<std::vector<bool>> checkpoints = std::make_shared<std::vector<bo
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader);
 void updateWind();
 
-void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<Mesh> &mesh,
-           bool has_wind);
+void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<Mesh> &mesh, const std::shared_ptr<Mesh> &collisionMesh,
+           bool has_wind, bool should_collide, int typeIdentifier);
 
 void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y);
 void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y);
@@ -164,13 +165,15 @@ std::vector<char> split(const std::string &str) {
 void createPlayer(std::shared_ptr<ShaderProgram> standardShader, int x, int y){
     std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/rally_car.obj");
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
-    gameObject->addComponent(new PlayerController(tiles, tileWidth));
     gameObject->setLocation(chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
+    gameObject->update(0.0f);
+    gameObject->addComponent(new PlayerController(tiles, tileWidth));
     StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
     gameObject->addRenderComponent(stdrenderer);
     gameObject->setDynamic(true);
-    gameObject->setIdentifier(2);
-    gameObject->addCollidesWith(7);
+    gameObject->setIdentifier(PLAYER_IDENTIFIER);
+    gameObject->addCollidesWith(COLLIDABLE_AND_COLLISION_IDENTIFIER);
+    gameObject->addCollidesWith(COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
 
     scene->addShadowCaster(gameObject);
 }
@@ -189,6 +192,7 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
     std::shared_ptr<Mesh> grassMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/grass.obj");
     std::shared_ptr<Mesh> asphaltMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/floor.obj");
     std::shared_ptr<Mesh> mountainMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain.obj");
+    std::shared_ptr<Mesh> mountainCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain_collision.obj");
     std::shared_ptr<Mesh> treeMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/tree.obj");
 
     for (int y = 0; y < tiles.get()->size(); y++) {
@@ -199,23 +203,23 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
             bool has_wind = false;
             char &tile = (*tiles.get())[y][x];
             if (tile == '_' ) {
-                createTile(standardShader, y, x, grassMesh, has_wind);
+                createTile(standardShader, y, x, grassMesh, grassMesh, has_wind, false, NO_COLLISION_IDENTIFIER);
             } else if (tile == '#'){
-                createTile(standardShader, y, x, asphaltMesh, has_wind);
+                createTile(standardShader, y, x, asphaltMesh, asphaltMesh, has_wind, false, NO_COLLISION_IDENTIFIER);
             } else if (tile == '^'){
-                createTile(standardShader, y, x, mountainMesh, has_wind);
+                createTile(standardShader, y, x, mountainMesh, mountainCollisionMesh, has_wind, true, COLLIDABLE_AND_COLLISION_IDENTIFIER);
             } else if (tile == '$'){
                 has_wind = true;
-                createTile(standardShader, y, x, treeMesh, has_wind);
+                createTile(standardShader, y, x, treeMesh, treeMesh, has_wind, true, COLLIDABLE_AND_COLLISION_IDENTIFIER);
             } else if (tile == 'S'){
                 createPlayer(standardShader, x, y);
-                createTile(standardShader, y, x, asphaltMesh, has_wind);
+                createTile(standardShader, y, x, asphaltMesh, asphaltMesh, has_wind, false, NO_COLLISION_IDENTIFIER);
             } else if (tile == 'C'){
                 createCheckpoint(standardShader, x, y);
-                createTile(standardShader, y, x, asphaltMesh, has_wind);
+                createTile(standardShader, y, x, asphaltMesh, asphaltMesh, has_wind, false, COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
             } else if (tile == 'G'){
                 createGoal(standardShader, x, y);
-                createTile(standardShader, y, x, asphaltMesh, has_wind);
+                createTile(standardShader, y, x, asphaltMesh, asphaltMesh, has_wind, false, COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
             }
         }
     }
@@ -230,7 +234,7 @@ void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int 
     gameObject->update(0.0f);
     StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
     gameObject->addRenderComponent(stdrenderer);
-    gameObject->setIdentifier(7);
+    gameObject->setIdentifier(COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
 
     gameObject->addComponent(new UnlockCheckpointOnCollisionComponent(checkpoints->size(), checkpoints));
     checkpoints->push_back(false);
@@ -247,15 +251,15 @@ void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int
     gameObject->update(0.0f);
     StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
     gameObject->addRenderComponent(stdrenderer);
-    gameObject->setIdentifier(7);
+    gameObject->setIdentifier(COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
 
     gameObject->addComponent(new WinOnCollisionComponentAndCheckpointsDone(checkpoints));
 
     scene->addShadowCaster(gameObject);
 }
 
-void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<Mesh> &mesh,
-           bool has_wind) {
+void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<Mesh> &mesh, const std::shared_ptr<Mesh> &collisionMesh,
+           bool has_wind, bool should_collide, int typeIdentifier) {
     std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
     StandardRenderer *stdFloorRenderer = new StandardRenderer(mesh, standardShader);
 
@@ -271,7 +275,12 @@ void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int
                 floorObject->setMainBendiness(0.05);
                 floorObject->setBranchAmplitude(0.5);
                 floorObject->setLeafAmplitude(0.05);
-            }
+    }
+
+    floorObject->setIdentifier(typeIdentifier);
+    if (should_collide) {
+        floorObject->collidesWith(PLAYER_IDENTIFIER);
+    }
 
     scene->addShadowCaster(floorObject);
 }
