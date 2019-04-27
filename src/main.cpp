@@ -18,6 +18,7 @@
 #include <ui/Menu.h>
 #include "components/UnlockCheckpointOnCollisionComponent.h"
 #include "RallyConstants.h"
+#include <objects/TileTexture.h>
 
 Renderer renderer;
 
@@ -37,11 +38,16 @@ std::shared_ptr<std::vector<bool>> checkpoints = std::make_shared<std::vector<bo
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader);
 void updateWind();
 
-void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<Mesh> &mesh, const std::shared_ptr<Mesh> &collisionMesh,
+void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<IMesh> &mesh, const std::shared_ptr<IMesh> &collisionMesh,
            bool has_wind, bool should_collide, int typeIdentifier);
 
 void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y);
 void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y);
+
+void createGrassAndPath(const std::shared_ptr<ShaderProgram> &standardShader);
+
+void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader);
+
 
 void idle(float timeSinceStart, float timeSinceLastCall) {
     scene->update(timeSinceLastCall);
@@ -163,7 +169,7 @@ std::vector<char> split(const std::string &str) {
 }
 
 void createPlayer(std::shared_ptr<ShaderProgram> standardShader, int x, int y){
-    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/rally_car.obj");
+    std::shared_ptr<IMesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/rally_car.obj");
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
     gameObject->setLocation(chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
     gameObject->update(0.0f);
@@ -179,6 +185,7 @@ void createPlayer(std::shared_ptr<ShaderProgram> standardShader, int x, int y){
 }
 
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
+
     tiles = std::make_shared<std::vector<std::vector<char>>>();
     std::ifstream file("../assets/map/map.txt");
     if (file.is_open()) {
@@ -189,44 +196,62 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
         file.close();
     }
 
-    std::shared_ptr<Mesh> grassMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/grass.obj");
-    std::shared_ptr<Mesh> asphaltMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/floor.obj");
-    std::shared_ptr<Mesh> mountainMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain.obj");
-    std::shared_ptr<Mesh> mountainCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain_collision.obj");
-    std::shared_ptr<Mesh> treeMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/tree.obj");
+    createGrassAndPath(standardShader);
+    createObjectTiles(standardShader);
+
+
+}
+
+void createGrassAndPath(const std::shared_ptr<ShaderProgram> &standardShader) {
+    std::shared_ptr<IMesh> floorMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/grass.obj");
+    std::shared_ptr<TileTexture> tileTexture = std::make_shared<TileTexture>(tiles);
+    tileTexture->loadTexture();
+    floorMesh->getMaterials()->at(1) = Material(chag::make_vector(1.0f, 1.0f, 1.0f),
+                                                chag::make_vector(1.0f, 1.0f, 1.0f),
+                                                chag::make_vector(0.0f, 0.0f, 0.0f),
+                                                chag::make_vector(0.0f, 0.0f, 0.0f), 1.0f, tileTexture);
+
+    auto grassObject = std::make_shared<GameObject>(floorMesh);
+    StandardRenderer *stdFloorRenderer = new StandardRenderer(floorMesh, standardShader);
+    grassObject->setScale(chag::make_vector((float) tiles->size(), 1.0f, (float) tiles->at(0).size()));
+    grassObject->setLocation(chag::make_vector(-(float) tiles->at(0).size(), 0.0f, -(float) tiles->size()));
+    grassObject->setRotation(chag::make_quaternion_axis_angle(chag::make_vector(0.0f, 1.0f, 0.0f), M_PI_2));
+    grassObject->addRenderComponent(stdFloorRenderer);
+
+    scene->addShadowCaster(grassObject);
+}
+
+void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader) {
+    std::shared_ptr<IMesh> mountainMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain.obj");
+    std::shared_ptr<IMesh> treeMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/tree.obj");
+    std::shared_ptr<IMesh> mountainCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain_collision.obj");
 
     for (int y = 0; y < tiles.get()->size(); y++) {
         for (int x = 0; x < ((*tiles.get())[y]).size(); x++) {
 
-            std::shared_ptr<Mesh> mesh;
+            std::shared_ptr<IMesh> mesh;
 
             bool has_wind = false;
             char &tile = (*tiles.get())[y][x];
-            if (tile == '_' ) {
-                createTile(standardShader, y, x, grassMesh, grassMesh, has_wind, false, NO_COLLISION_IDENTIFIER);
-            } else if (tile == '#'){
-                createTile(standardShader, y, x, asphaltMesh, asphaltMesh, has_wind, false, NO_COLLISION_IDENTIFIER);
-            } else if (tile == '^'){
+            if (tile == '^'){
                 createTile(standardShader, y, x, mountainMesh, mountainCollisionMesh, has_wind, true, COLLIDABLE_AND_COLLISION_IDENTIFIER);
             } else if (tile == '$'){
                 has_wind = true;
                 createTile(standardShader, y, x, treeMesh, treeMesh, has_wind, true, COLLIDABLE_AND_COLLISION_IDENTIFIER);
             } else if (tile == 'S'){
                 createPlayer(standardShader, x, y);
-                createTile(standardShader, y, x, asphaltMesh, asphaltMesh, has_wind, false, NO_COLLISION_IDENTIFIER);
             } else if (tile == 'C'){
                 createCheckpoint(standardShader, x, y);
-                createTile(standardShader, y, x, asphaltMesh, asphaltMesh, has_wind, false, COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
             } else if (tile == 'G'){
                 createGoal(standardShader, x, y);
-                createTile(standardShader, y, x, asphaltMesh, asphaltMesh, has_wind, false, COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
+
             }
         }
     }
 }
 
 void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y) {
-    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/revive.fbx");
+    std::shared_ptr<IMesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/revive.fbx");
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
 
     const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
@@ -243,7 +268,7 @@ void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int 
 }
 
 void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y) {
-    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/goal.obj");
+    std::shared_ptr<IMesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/goal.obj");
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
 
     const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
@@ -258,7 +283,7 @@ void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int
     scene->addShadowCaster(gameObject);
 }
 
-void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<Mesh> &mesh, const std::shared_ptr<Mesh> &collisionMesh,
+void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<IMesh> &mesh, const std::shared_ptr<IMesh> &collisionMesh,
            bool has_wind, bool should_collide, int typeIdentifier) {
     std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
     StandardRenderer *stdFloorRenderer = new StandardRenderer(mesh, standardShader);

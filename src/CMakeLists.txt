@@ -6,6 +6,7 @@ set(GAME_SOURCE_FILES main.cpp controls.h)
 add_subdirectory(cameras)
 add_subdirectory(components)
 add_subdirectory(ui)
+add_subdirectory(objects)
 
 # Define the executable
 set(EXECUTABLE_NAME HallsOfBubba)
