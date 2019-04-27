@@ -116,6 +116,7 @@ int main() {
     win->setIdleMethod(idle);
     win->setDisplayMethod(display);
 
+    renderer.setBackgroundColor(chag::make_vector(0.0f,0.0f,0.0f));
     renderer.initRenderer(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     camera = new TopDownCamera(chag::make_vector(0.0f, 0.0f, 0.0f), SCREEN_WIDTH, SCREEN_HEIGHT);
