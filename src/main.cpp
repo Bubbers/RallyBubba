@@ -24,6 +24,8 @@ const int SCREEN_HEIGHT = 480;
 TopDownCamera *camera;
 std::shared_ptr<Scene> scene;
 Collider *collider = ColliderFactory::getTwoPhaseCollider();
+std::shared_ptr<std::vector<std::vector<int>>> tiles;
+const float tileWidth = 2.0f;
 
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader);
 
@@ -61,23 +63,25 @@ void createLight() {
 }
 
 void loadWorld() {
-    std::shared_ptr<ShaderProgram> standardShader = ResourceManager::loadAndFetchShaderProgram(SIMPLE_SHADER_NAME, "", "");
-    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/johancar.obj");
+    scene = std::make_shared<Scene>();
 
+    std::shared_ptr<ShaderProgram> standardShader = ResourceManager::loadAndFetchShaderProgram(SIMPLE_SHADER_NAME, "", "");
+
+    // Ground mesh
+    loadFloor(standardShader);
+
+    std::shared_ptr<Mesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/rally_car.obj");
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
-    gameObject->addComponent(new PlayerController());
-    gameObject->setLocation(chag::make_vector(0.0f, 0.0f, 5.0f));
+    gameObject->addComponent(new PlayerController(tiles, tileWidth));
+    gameObject->setLocation(chag::make_vector(0.0f, 0.0f, 0.0f));
+    //gameObject->setScale(chag::make_vector(0.1f, 3.0f, 0.1f));
     StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
     gameObject->addRenderComponent(stdrenderer);
     gameObject->setDynamic(true);
     gameObject->setIdentifier(2);
     gameObject->addCollidesWith(1);
 
-    scene = std::make_shared<Scene>();
     scene->addShadowCaster(gameObject);
-
-    // Ground mesh
-    loadFloor(standardShader);
 }
 
 std::vector<int> split(std::string str, char delimiter) {
@@ -93,32 +97,25 @@ std::vector<int> split(std::string str, char delimiter) {
 }
 
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
-
-    std::vector<std::vector<int>> tiles;
-
+    tiles = std::make_shared<std::vector<std::vector<int>>>();
     std::ifstream file("../assets/map/map.txt");
     if (file.is_open()) {
         std::string line;
         while (getline(file, line)) {
-            // using printf() in all tests for consistency
-            printf("%s\n", line.c_str());
-            tiles.push_back(split(line.c_str(), ' '));
-
+            tiles.get()->push_back(split(line.c_str(), ' '));
         }
         file.close();
     }
 
-    const float tileWidth = 2.0f;
-
     std::shared_ptr<Mesh> asphaltMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/floor.obj");
     std::shared_ptr<Mesh> grassMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/grass.obj");
 
-    for (int y = 0; y < tiles.size(); y++) {
-        for (int x = 0; x < tiles[y].size(); x++) {
+    for (int y = 0; y < tiles.get()->size(); y++) {
+        for (int x = 0; x < ((*tiles.get())[y]).size(); x++) {
 
             std::shared_ptr<Mesh> mesh;
 
-            if (tiles[y][x] == 0 ) {
+            if ((*tiles.get())[y][x] == 0 ) {
                 mesh = grassMesh;
             } else {
                 mesh = asphaltMesh;
@@ -126,9 +123,11 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
 
             std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
             StandardRenderer *stdFloorRenderer = new StandardRenderer(mesh, standardShader);
+
+            // Placement offset is needed to get the corner of the tile to match the tiles grid coordinates
+            const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
             // The minus for x is needed as the x axis is flipped. For y we need it as we traverse top to down
-            chag::float3 startRenderingVector = chag::make_vector(25.0f, 0.0f, 25.0f);
-            floorObject->setLocation(startRenderingVector + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
+            floorObject->setLocation(placementOffset + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
             floorObject->setScale(chag::make_vector(1.0f, 1.0f, 1.0f));
             floorObject->addRenderComponent(stdFloorRenderer);
 
@@ -158,7 +157,7 @@ int main() {
     renderer.setBackgroundColor(chag::make_vector(0.0f,0.0f,0.0f));
     renderer.initRenderer(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    camera = new TopDownCamera(chag::make_vector(0.0f, 0.0f, 0.0f), SCREEN_WIDTH, SCREEN_HEIGHT);
+    camera = new TopDownCamera(chag::make_vector(-25.0f, 0.0f, -25.0f), SCREEN_WIDTH, SCREEN_HEIGHT);
 
     loadWorld();
     createLight();

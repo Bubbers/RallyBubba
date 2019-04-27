@@ -7,6 +7,11 @@
 #include "PlayerController.h"
 #include "linmath/float3x3.h"
 
+PlayerController::PlayerController(std::shared_ptr<std::vector<std::vector<int>>> tiles, float tileWidth) {
+    this->tiles = tiles;
+    this->tileWidth = tileWidth;
+}
+
 void PlayerController::update(float dt) {
     if (owner.expired()) {
         return;
@@ -30,12 +35,24 @@ void PlayerController::update(float dt) {
             acceleration = 0.0f;
         }
     }
+
+    if (!isOnAsphalt()) {
+        float maxGrassSpeed = 5.0f;
+        if (fabs(speed) > maxGrassSpeed) {
+            if(speed > 0) {
+                acceleration = -(float)fmin((fabs(speed) - maxGrassSpeed), 5.0) * dt;
+            } else {
+                acceleration = (float)fmin((fabs(speed) - maxGrassSpeed), 5.0) * dt;
+            }
+        }
+    }
+
     speed = clamp(speed + acceleration, minSpeed, maxSpeed);
     setVelocity(front_vector * speed);
 
     if(turnStatus.isActive()){
         float angle = rotationSpeed * turnStatus.getValue();
-        angle *= abs(speed/maxSpeed);
+        angle *= fabs(speed/maxSpeed);
         if(speed < 0.0f) {
             angle *= -1;
         }
@@ -56,4 +73,15 @@ float PlayerController::clamp(float value, float min, float max) {
         return max;
     }
     return value;
+}
+
+bool PlayerController::isOnAsphalt() {
+    const chag::float3 &absoluteLocation = owner.lock()->getAbsoluteLocation();
+
+    int x = (int)(-absoluteLocation.x / tileWidth);
+    int y = (int)(-absoluteLocation.z / tileWidth);
+
+    int currentTile = (*tiles.get())[y][x];
+
+    return currentTile == 1;
 }
