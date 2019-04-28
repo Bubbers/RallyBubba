@@ -52,6 +52,8 @@ void createGrassAndPath(const std::shared_ptr<ShaderProgram> &standardShader);
 void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader);
 
 
+void initTiles();
+
 void idle(float timeSinceStart, float timeSinceLastCall) {
     scene->update(timeSinceLastCall);
     collider->updateCollision(scene.get());
@@ -191,6 +193,13 @@ void createPlayer(std::shared_ptr<ShaderProgram> standardShader, int x, int y){
 
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
 
+    createGrassAndPath(standardShader);
+    createObjectTiles(standardShader);
+
+
+}
+
+void initTiles() {
     tiles = std::make_shared<std::vector<std::vector<char>>>();
     std::ifstream file("../assets/map/map.txt");
     if (file.is_open()) {
@@ -200,11 +209,6 @@ void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader) {
         }
         file.close();
     }
-
-    createGrassAndPath(standardShader);
-    createObjectTiles(standardShader);
-
-
 }
 
 void createGrassAndPath(const std::shared_ptr<ShaderProgram> &standardShader) {
@@ -330,7 +334,8 @@ int main() {
     renderer.setBackgroundColor(chag::make_vector(0.0f,0.0f,0.0f));
     renderer.initRenderer(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    camera = new TopDownCamera(chag::make_vector(-25.0f, 0.0f, -25.0f), SCREEN_WIDTH, SCREEN_HEIGHT);
+    initTiles();
+    camera = new TopDownCamera(chag::make_vector(-(float)tiles->at(0).size(), 0.0f, -(float)tiles->size()), SCREEN_WIDTH, SCREEN_HEIGHT);
 
     loadMenu();
 

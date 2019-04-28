@@ -5,7 +5,7 @@
 #include "TopDownCamera.h"
 
 TopDownCamera::TopDownCamera(const chag::float3 &centralFloorPoint, int width, int height) :
-        PerspectiveCamera(centralFloorPoint + chag::make_vector(0.0f,80.0f,-80.0f),
+        PerspectiveCamera(centralFloorPoint + chag::make_vector(0.0f,120.0f,-120.0f),
                centralFloorPoint,
                chag::normalize(chag::make_vector(0.0f,1.0f,1.0f)),
                45,

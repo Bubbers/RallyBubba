@@ -22,8 +22,8 @@ public:
 private:
     chag::float3 up_vector = chag::make_vector(0.0f, 1.0f, 0.0f);
     float rotationSpeed = 0.02f;
-    float maxSpeed = 15.0f;
-    float minSpeed = -5.0f;
+    float maxSpeed = 20.0f;
+    float minSpeed = -8.0f;
     float speed = 0.0f;
     float maxAcceleration = 10.0f;
     float minAcceleration = -10.0f;
@@ -38,6 +38,8 @@ private:
     float clamp(float value, float min, float max);
 
     chag::float3 locationAtLastUpdate;
+
+    float getRotationMultiplier(float speed);
 };
 
 

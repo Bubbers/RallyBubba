@@ -56,9 +56,9 @@ void PlayerController::update(float dt) {
         float maxGrassSpeed = 5.0f;
         if (fabs(speed) > maxGrassSpeed) {
             if(speed > 0) {
-                acceleration = -(float)fmin((fabs(speed) - (maxGrassSpeed - 0.5f)), 5.0) * dt;
+                acceleration = -(fabs(speed) - (maxGrassSpeed - 0.5f)) * dt;
             } else {
-                acceleration = (float)fmin((fabs(speed) - (maxGrassSpeed - 0.5f)), 5.0) * dt;
+                acceleration = (fabs(speed) - (maxGrassSpeed - 0.5f)) * dt;
             }
         }
     }
@@ -67,7 +67,7 @@ void PlayerController::update(float dt) {
     setVelocity(front_vector * speed);
 
     if(turnStatus.isActive()){
-        float angle = rotationSpeed * turnStatus.getValue();
+        float angle = getRotationMultiplier(fabs(speed)) * turnStatus.getValue();
         angle *= fabs(speed/maxSpeed);
         if(speed < 0.0f) {
             angle *= -1;
@@ -100,4 +100,9 @@ bool PlayerController::isOnAsphalt() {
     char currentTile = (*tiles.get())[y][x];
 
     return currentTile == '#';
+}
+
+// Sharper turn curve at lower speeds
+float PlayerController::getRotationMultiplier(float speed) {
+    return -speed/500.0f + 0.06f;
 }
