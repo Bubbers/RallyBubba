@@ -60,9 +60,9 @@ void PlayerController::update(float dt) {
         float maxGrassSpeed = 5.0f;
         if (fabs(speed) > maxGrassSpeed) {
             if(speed > 0) {
-                acceleration = -(fabs(speed) - (maxGrassSpeed - 0.5f)) * dt;
+                acceleration = fmin(acceleration, -(fabs(speed) - (maxGrassSpeed - 0.5f)) * dt);
             } else {
-                acceleration = (fabs(speed) - (maxGrassSpeed - 0.5f)) * dt;
+                acceleration = fmax(acceleration, (fabs(speed) - (maxGrassSpeed - 0.5f)) * dt);
             }
         }
     }
