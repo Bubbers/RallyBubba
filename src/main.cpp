@@ -273,11 +273,11 @@ void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader) {
                 createTile(standardShader, y, x, treeMesh, treeCollisionMesh, has_wind, true,
                            COLLIDABLE_AND_COLLISION_IDENTIFIER);
             } else if (tile == 'H') {
-                auto trees = createTile(standardShader, y, x, forestMesh, forestCollisionMesh, false, true,
+                auto trees = createTile(standardShader, y, x, forestMesh, forestCollisionMesh, true, true,
                            COLLIDABLE_AND_COLLISION_IDENTIFIER);
                 trees->setRotation(chag::make_quaternion_axis_angle(chag::make_vector(0.0f, 1.0f, 0.0f), M_PI_2));
             } else if (tile == 'V'){
-                createTile(standardShader, y, x, forestMesh, forestCollisionMesh, false, true,
+                createTile(standardShader, y, x, forestMesh, forestCollisionMesh, true, true,
                            COLLIDABLE_AND_COLLISION_IDENTIFIER);
             } else if (tile == 'S'){
                 createPlayer(standardShader, x, y);
@@ -326,7 +326,7 @@ void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int
 
 std::shared_ptr<GameObject> createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<IMesh> &mesh, const std::shared_ptr<IMesh> &collisionMesh,
            bool has_wind, bool should_collide, int typeIdentifier) {
-    std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
+    std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh, collisionMesh);
     StandardRenderer *stdFloorRenderer = new StandardRenderer(mesh, standardShader);
 
     // Placement offset is needed to get the corner of the tile to match the tiles grid coordinates
