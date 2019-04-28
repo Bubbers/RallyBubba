@@ -309,13 +309,14 @@ void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int 
 }
 
 void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y) {
-    std::shared_ptr<IMesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/goal.obj");
-    std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
+    std::shared_ptr<IMesh> goalMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/goal.obj");
+    std::shared_ptr<IMesh> goalCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/goal_collision.obj");
+    std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(goalMesh, goalCollisionMesh);
 
     const chag::SmallVector3<float> &placementOffset = chag::make_vector(-tileWidth / 2, 0.0f, -tileWidth / 2);
     gameObject->setLocation(placementOffset + chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
     gameObject->update(0.0f);
-    StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
+    StandardRenderer* stdrenderer = new StandardRenderer(goalMesh, standardShader);
     gameObject->addRenderComponent(stdrenderer);
     gameObject->setIdentifier(COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
 

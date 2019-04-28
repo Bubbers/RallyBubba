@@ -15,6 +15,8 @@ PlayerController::PlayerController(std::shared_ptr<std::vector<std::vector<char>
 
 void PlayerController::beforeCollision(std::shared_ptr<GameObject> collider) {
     if (collider->getIdentifier() == COLLIDABLE_AND_COLLISION_IDENTIFIER) {
+        speed = 0;
+        acceleration = 0;
         std::shared_ptr<GameObject> owner_ptr = owner.lock();
         owner_ptr->setLocation(locationAtLastUpdate);
     }
@@ -22,6 +24,8 @@ void PlayerController::beforeCollision(std::shared_ptr<GameObject> collider) {
 
 void PlayerController::duringCollision(std::shared_ptr<GameObject> collider) {
     if (collider->getIdentifier() == COLLIDABLE_AND_COLLISION_IDENTIFIER) {
+        speed = 0;
+        acceleration = 0;
         std::shared_ptr<GameObject> owner_ptr = owner.lock();
         owner_ptr->setLocation(locationAtLastUpdate);
     }
