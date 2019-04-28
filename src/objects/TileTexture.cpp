@@ -27,7 +27,7 @@ void TileTexture::loadTexture() {
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             char &tile = tiles->at(y).at(x);
-            if(tile == '#' || (tile > 'A' && tile < 'Z')) {
+            if(tile == '#' || (tile > 'A' && tile < 'Z' && tile != 'V' && tile != 'H')) {
                 image[height - 1 - y][x][0] = 128;
                 image[height - 1 - y][x][1] = 128;
                 image[height - 1 - y][x][2] = 128;

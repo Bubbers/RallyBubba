@@ -46,7 +46,8 @@ std::shared_ptr<std::vector<bool>> checkpoints = std::make_shared<std::vector<bo
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader);
 void updateWind();
 
-void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<IMesh> &mesh, const std::shared_ptr<IMesh> &collisionMesh,
+std::shared_ptr<GameObject>
+createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<IMesh> &mesh, const std::shared_ptr<IMesh> &collisionMesh,
            bool has_wind, bool should_collide, int typeIdentifier);
 
 void createCheckpoint(const std::shared_ptr<ShaderProgram> &standardShader, int x, int y);
@@ -253,7 +254,10 @@ void createGrassAndPath(const std::shared_ptr<ShaderProgram> &standardShader) {
 void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader) {
     std::shared_ptr<IMesh> mountainMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain.obj");
     std::shared_ptr<IMesh> treeMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/tree.obj");
+    std::shared_ptr<IMesh> treeCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/trees_collision.obj");
     std::shared_ptr<IMesh> mountainCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain_collision.obj");
+    std::shared_ptr<IMesh> forestMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/forest_vertical.obj");
+    std::shared_ptr<IMesh> forestCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/forest_vertical_collision.obj");
 
     for (int y = 0; y < tiles.get()->size(); y++) {
         for (int x = 0; x < ((*tiles.get())[y]).size(); x++) {
@@ -264,9 +268,17 @@ void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader) {
             char &tile = (*tiles.get())[y][x];
             if (tile == '^'){
                 createTile(standardShader, y, x, mountainMesh, mountainCollisionMesh, has_wind, true, COLLIDABLE_AND_COLLISION_IDENTIFIER);
-            } else if (tile == '$'){
+            } else if (tile == '$') {
                 has_wind = true;
-                createTile(standardShader, y, x, treeMesh, treeMesh, has_wind, true, COLLIDABLE_AND_COLLISION_IDENTIFIER);
+                createTile(standardShader, y, x, treeMesh, treeCollisionMesh, has_wind, true,
+                           COLLIDABLE_AND_COLLISION_IDENTIFIER);
+            } else if (tile == 'H') {
+                auto trees = createTile(standardShader, y, x, forestMesh, forestCollisionMesh, false, true,
+                           COLLIDABLE_AND_COLLISION_IDENTIFIER);
+                trees->setRotation(chag::make_quaternion_axis_angle(chag::make_vector(0.0f, 1.0f, 0.0f), M_PI_2));
+            } else if (tile == 'V'){
+                createTile(standardShader, y, x, forestMesh, forestCollisionMesh, false, true,
+                           COLLIDABLE_AND_COLLISION_IDENTIFIER);
             } else if (tile == 'S'){
                 createPlayer(standardShader, x, y);
             } else if (tile == 'C'){
@@ -312,7 +324,7 @@ void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int
     scene->addShadowCaster(gameObject);
 }
 
-void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<IMesh> &mesh, const std::shared_ptr<IMesh> &collisionMesh,
+std::shared_ptr<GameObject> createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int x, const std::shared_ptr<IMesh> &mesh, const std::shared_ptr<IMesh> &collisionMesh,
            bool has_wind, bool should_collide, int typeIdentifier) {
     std::shared_ptr<GameObject> floorObject = std::make_shared<GameObject>(mesh);
     StandardRenderer *stdFloorRenderer = new StandardRenderer(mesh, standardShader);
@@ -337,6 +349,7 @@ void createTile(const std::shared_ptr<ShaderProgram> &standardShader, int y, int
     }
 
     scene->addShadowCaster(floorObject);
+    return floorObject;
 }
 
 int main() {
