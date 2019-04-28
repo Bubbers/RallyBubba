@@ -17,6 +17,7 @@ private:
     std::shared_ptr<sf::Clock> clock;
     bool has_won;
     std::function<void()> func;
+    std::shared_ptr<sf::Sound> win_sound;
 };
 
 

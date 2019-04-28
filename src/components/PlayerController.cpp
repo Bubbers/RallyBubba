@@ -4,6 +4,7 @@
 
 #include <ControlsManager.h>
 #include <controls.h>
+#include <ResourceManager.h>
 #include "PlayerController.h"
 #include "linmath/float3x3.h"
 #include "RallyConstants.h"
@@ -12,6 +13,9 @@ PlayerController::PlayerController(std::shared_ptr<std::vector<std::vector<char>
     this->tiles = tiles;
     this->tileWidth = tileWidth;
     this->locationAtLastCheckpoint = startPosition;
+    this->revvingSound = std::shared_ptr<sf::Sound>(ResourceManager::loadAndFetchSound("../assets/sounds/engine_revving.wav"));
+    this->revvingSound->setVolume(50.0f);
+    this->engineSound = std::shared_ptr<sf::Sound>(ResourceManager::loadAndFetchSound("../assets/sounds/engine_sound.wav"));
 }
 
 void PlayerController::beforeCollision(std::shared_ptr<GameObject> collider) {
@@ -54,6 +58,7 @@ void PlayerController::update(float dt) {
 
     float acceleration;
     if (accelerationStatus.isActive()) {
+        bool isAccelerating = false;
         float accelerationMultiplier;
         float accelerationAmount = accelerationStatus.getValue();
         if (speed > 0.0f) {
@@ -61,22 +66,35 @@ void PlayerController::update(float dt) {
                 accelerationMultiplier = breakAcceleration;
             } else {
                 accelerationMultiplier = maxAcceleration;
+                isAccelerating = true;
             }
         } else if(speed < 0.0f) {
             if (accelerationAmount < 0.0f) {
                 accelerationMultiplier = minAcceleration;
+                isAccelerating = true;
             } else {
                 accelerationMultiplier = breakAcceleration;
             }
         } else {
+            isAccelerating = true;
             if (accelerationAmount < 0.0f) {
                 accelerationMultiplier = minAcceleration;
             } else {
                 accelerationMultiplier = maxAcceleration;
             }
         }
+        if(isAccelerating) {
+            if (revvingSound->getStatus() != sf::Sound::Playing) {
+                engineSound->stop();
+                revvingSound->play();
+            }
+        }
         acceleration = accelerationMultiplier * dt * accelerationAmount / 100.0f;
     } else {
+        if (engineSound->getStatus() != sf::Sound::Playing) {
+            revvingSound->stop();
+            engineSound->play();
+        }
         if(speed > 0) {
             acceleration = -passiveSlowdown * dt;
         } else if(speed < 0) {

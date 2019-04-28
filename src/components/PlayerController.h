@@ -7,6 +7,7 @@
 
 
 #include <MoveComponent.h>
+#include <SFML/Audio/Sound.hpp>
 
 class PlayerController : public MoveComponent{
 
@@ -34,6 +35,8 @@ private:
     float tileWidth;
     chag::float3 locationAtLastUpdate;
     chag::float3 locationAtLastCheckpoint;
+    std::shared_ptr<sf::Sound> engineSound;
+    std::shared_ptr<sf::Sound> revvingSound;
 
     bool isOnAsphalt();
 

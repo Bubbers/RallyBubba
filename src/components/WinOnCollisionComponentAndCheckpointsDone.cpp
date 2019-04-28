@@ -15,6 +15,7 @@ WinOnCollisionComponentAndCheckpointsDone::WinOnCollisionComponentAndCheckpoints
     this->clock = clock;
     this->has_won = false;
     this->func = func;
+    this->win_sound = std::shared_ptr<sf::Sound>(ResourceManager::loadAndFetchSound("../assets/sounds/yay.wav"));
 }
 
 void WinOnCollisionComponentAndCheckpointsDone::beforeCollision(std::shared_ptr<GameObject> collider) {
@@ -32,6 +33,7 @@ void WinOnCollisionComponentAndCheckpointsDone::beforeCollision(std::shared_ptr<
 
     if (hasAllCheckpoints) {
         this->has_won = true;
+        this->win_sound->play();
 
         std::shared_ptr<GameObject> hudObj = std::make_shared<GameObject>();
         auto winScreenRenderer = new HudRenderer();
