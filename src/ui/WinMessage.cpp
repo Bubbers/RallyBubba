@@ -18,10 +18,10 @@ WinMessage::WinMessage(float elapsedTimeSeconds): PositioningLayout(Dimension::f
     smallerMenu->setBackground(graphic);
 
     TextLayout *youWinText = new TextLayout("You win!", ubuntuFont28, Dimension::fromPixels(200), Dimension::fromPixels(32));
-    smallerMenu->addChild(youWinText, Dimension::fromPercentage(30.0f), Dimension::fromPercentage(30.0f));
+    smallerMenu->addChild(youWinText, Dimension::fromPercentagePlusPixels(50.0f, -100), Dimension::fromPercentage(30.0f));
 
     TextLayout *timeText = new TextLayout("Time: " + std::to_string(elapsedTimeSeconds), ubuntuFont28, Dimension::fromPixels(200), Dimension::fromPixels(32));
-    smallerMenu->addChild(timeText, Dimension::fromPercentage(30.0f), Dimension::fromPercentage(50.0f));
+    smallerMenu->addChild(timeText, Dimension::fromPercentagePlusPixels(50.0f, -100), Dimension::fromPercentage(50.0f));
 
     addChild(smallerMenu, Dimension::fromPercentage(15), Dimension::fromPercentage(15));
 
