@@ -30,7 +30,6 @@ void WinOnCollisionComponentAndCheckpointsDone::beforeCollision(std::shared_ptr<
 
     if (hasAllCheckpoints) {
         this->has_won = true;
-        auto menuBg = ResourceManager::loadAndFetchTexture("../assets/menu/bubba_menu.png");
 
         std::shared_ptr<GameObject> hudObj = std::make_shared<GameObject>();
         auto winScreenRenderer = new HudRenderer();

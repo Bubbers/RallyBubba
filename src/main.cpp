@@ -19,6 +19,10 @@
 #include "components/UnlockCheckpointOnCollisionComponent.h"
 #include "RallyConstants.h"
 #include <objects/TileTexture.h>
+#include <Font.h>
+#include <FontManager.h>
+#include <TextLayout.h>
+#include <components/TimeDisplayComponent.h>
 
 Renderer renderer;
 
@@ -32,8 +36,9 @@ std::shared_ptr<Scene> scene;
 Collider *collider = ColliderFactory::getTwoPhaseCollider();
 std::shared_ptr<std::vector<std::vector<char>>> tiles;
 const float tileWidth = 2.0f;
+std::shared_ptr<HudRenderer> timeDisplayRenderer = nullptr;
 
-auto winTimeClock = std::make_shared<sf::Clock>();
+std::shared_ptr<sf::Clock> winTimeClock = std::make_shared<sf::Clock>();
 float startTime = 0;
 
 std::shared_ptr<std::vector<bool>> checkpoints = std::make_shared<std::vector<bool>>();
@@ -53,6 +58,7 @@ void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader);
 
 
 void initTiles();
+void createTimeDisplayer();
 
 void idle(float timeSinceStart, float timeSinceLastCall) {
     scene->update(timeSinceLastCall);
@@ -99,6 +105,10 @@ void resize(int newWidth, int newHeight) {
         //menuRenderer->updateLayout();
     }
     renderer.resize(newWidth, newHeight);
+
+    if (timeDisplayRenderer != nullptr) {
+        timeDisplayRenderer->updateLayout();
+    }
 }
 
 void createLight() {
@@ -143,11 +153,13 @@ void loadWorld() {
 
     // Ground mesh
     loadFloor(standardShader);
+    createTimeDisplayer();
 
     createLight();
     createKeyListeners();
 
-    startTime = winTimeClock->getElapsedTime().asSeconds();
+    // Make sure it is zero when we start
+    winTimeClock->restart();
 }
 
 void loadMenu() {
@@ -209,6 +221,14 @@ void initTiles() {
         }
         file.close();
     }
+}
+
+void createTimeDisplayer() {
+    timeDisplayRenderer = std::make_shared<HudRenderer>();
+    std::shared_ptr<GameObject> hudObj = std::make_shared<GameObject>();
+    hudObj->addRenderComponent(timeDisplayRenderer.get());
+    hudObj->addComponent(new TimeDisplayComponent(timeDisplayRenderer, winTimeClock));
+    scene->addTransparentObject(hudObj);
 }
 
 void createGrassAndPath(const std::shared_ptr<ShaderProgram> &standardShader) {
