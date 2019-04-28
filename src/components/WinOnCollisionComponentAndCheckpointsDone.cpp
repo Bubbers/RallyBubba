@@ -30,7 +30,7 @@ void WinOnCollisionComponentAndCheckpointsDone::beforeCollision(std::shared_ptr<
         }
     }
 
-    if (!hasAllCheckpoints) {
+    if (hasAllCheckpoints) {
         this->has_won = true;
 
         std::shared_ptr<GameObject> hudObj = std::make_shared<GameObject>();
