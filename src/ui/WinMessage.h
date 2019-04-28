@@ -7,7 +7,7 @@
 
 class WinMessage: public PositioningLayout {
 public:
-    WinMessage();
+    WinMessage(float elapsedTimeSeconds);
 private:
 };
 

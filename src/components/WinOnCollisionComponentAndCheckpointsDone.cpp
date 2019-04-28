@@ -5,12 +5,21 @@
 #include "../ui/WinMessage.h"
 #include "GameObject.h"
 
-WinOnCollisionComponentAndCheckpointsDone::WinOnCollisionComponentAndCheckpointsDone(std::shared_ptr<std::vector<bool>> checkpoints, std::shared_ptr<Scene> scene) {
+WinOnCollisionComponentAndCheckpointsDone::WinOnCollisionComponentAndCheckpointsDone(
+        std::shared_ptr<std::vector<bool>> checkpoints,
+        std::shared_ptr<Scene> scene,
+        std::shared_ptr<sf::Clock> clock) {
     this->checkpoints = checkpoints;
     this->scene = scene;
+    this->clock = clock;
+    this->has_won = false;
 }
 
 void WinOnCollisionComponentAndCheckpointsDone::beforeCollision(std::shared_ptr<GameObject> collider) {
+    if (has_won) {
+        return;
+    }
+
     bool hasAllCheckpoints = true;
     for (bool b : (*checkpoints.get())) {
         if (!b) {
@@ -20,12 +29,12 @@ void WinOnCollisionComponentAndCheckpointsDone::beforeCollision(std::shared_ptr<
     }
 
     if (hasAllCheckpoints) {
-        printf("WIN\n");
+        this->has_won = true;
         auto menuBg = ResourceManager::loadAndFetchTexture("../assets/menu/bubba_menu.png");
 
         std::shared_ptr<GameObject> hudObj = std::make_shared<GameObject>();
         auto winScreenRenderer = new HudRenderer();
-        winScreenRenderer->setLayout(new WinMessage());
+        winScreenRenderer->setLayout(new WinMessage(clock->getElapsedTime().asSeconds()));
 
         hudObj->addRenderComponent(winScreenRenderer );
         scene->addTransparentObject(hudObj);

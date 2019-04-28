@@ -33,6 +33,9 @@ Collider *collider = ColliderFactory::getTwoPhaseCollider();
 std::shared_ptr<std::vector<std::vector<char>>> tiles;
 const float tileWidth = 2.0f;
 
+auto winTimeClock = std::make_shared<sf::Clock>();
+float startTime = 0;
+
 std::shared_ptr<std::vector<bool>> checkpoints = std::make_shared<std::vector<bool>>();
 
 void loadFloor(const std::shared_ptr<ShaderProgram> &standardShader);
@@ -141,6 +144,8 @@ void loadWorld() {
 
     createLight();
     createKeyListeners();
+
+    startTime = winTimeClock->getElapsedTime().asSeconds();
 }
 
 void loadMenu() {
@@ -278,7 +283,7 @@ void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int
     gameObject->addRenderComponent(stdrenderer);
     gameObject->setIdentifier(COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
 
-    gameObject->addComponent(new WinOnCollisionComponentAndCheckpointsDone(checkpoints, scene));
+    gameObject->addComponent(new WinOnCollisionComponentAndCheckpointsDone(checkpoints, scene, winTimeClock));
 
     scene->addShadowCaster(gameObject);
 }
