@@ -8,15 +8,18 @@
 #include "linmath/float3x3.h"
 #include "RallyConstants.h"
 
-PlayerController::PlayerController(std::shared_ptr<std::vector<std::vector<char>>> tiles, float tileWidth) {
+PlayerController::PlayerController(std::shared_ptr<std::vector<std::vector<char>>> tiles, float tileWidth, chag::float3 startPosition) {
     this->tiles = tiles;
     this->tileWidth = tileWidth;
+    this->locationAtLastCheckpoint = startPosition;
 }
 
 void PlayerController::beforeCollision(std::shared_ptr<GameObject> collider) {
+    if (collider->getIdentifier() == COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER) {
+        locationAtLastCheckpoint = collider->getAbsoluteLocation();
+    }
     if (collider->getIdentifier() == COLLIDABLE_AND_COLLISION_IDENTIFIER) {
         speed = 0;
-        acceleration = 0;
         std::shared_ptr<GameObject> owner_ptr = owner.lock();
         owner_ptr->setLocation(locationAtLastUpdate);
     }
@@ -25,7 +28,6 @@ void PlayerController::beforeCollision(std::shared_ptr<GameObject> collider) {
 void PlayerController::duringCollision(std::shared_ptr<GameObject> collider) {
     if (collider->getIdentifier() == COLLIDABLE_AND_COLLISION_IDENTIFIER) {
         speed = 0;
-        acceleration = 0;
         std::shared_ptr<GameObject> owner_ptr = owner.lock();
         owner_ptr->setLocation(locationAtLastUpdate);
     }
@@ -37,15 +39,43 @@ void PlayerController::update(float dt) {
     }
 
     std::shared_ptr<GameObject> owner_ptr = owner.lock();
+
     locationAtLastUpdate = owner_ptr->getRelativeLocation();
 
     ControlsManager* cm = ControlsManager::getInstance();
     ControlStatus accelerationStatus = cm->getStatus(ACCELERATE);
     ControlStatus turnStatus = cm->getStatus(TURN);
+    ControlStatus respawnStatus = cm->getStatus(RESPAWN);
+    if (respawnStatus.isActive()) {
+        owner_ptr->setLocation(locationAtLastCheckpoint);
+        speed = 0.0f;
+        return;
+    }
 
+    float acceleration;
     if (accelerationStatus.isActive()) {
-        acceleration = acceleration + dt * accelerationStatus.getValue() / 100.0f;
-        acceleration = clamp(acceleration, minAcceleration, maxAcceleration);
+        float accelerationMultiplier;
+        float accelerationAmount = accelerationStatus.getValue();
+        if (speed > 0.0f) {
+            if(accelerationAmount < 0.0f) {
+                accelerationMultiplier = breakAcceleration;
+            } else {
+                accelerationMultiplier = maxAcceleration;
+            }
+        } else if(speed < 0.0f) {
+            if (accelerationAmount < 0.0f) {
+                accelerationMultiplier = minAcceleration;
+            } else {
+                accelerationMultiplier = breakAcceleration;
+            }
+        } else {
+            if (accelerationAmount < 0.0f) {
+                accelerationMultiplier = minAcceleration;
+            } else {
+                accelerationMultiplier = maxAcceleration;
+            }
+        }
+        acceleration = accelerationMultiplier * dt * accelerationAmount / 100.0f;
     } else {
         if(speed > 0) {
             acceleration = -passiveSlowdown * dt;

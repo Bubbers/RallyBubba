@@ -144,6 +144,7 @@ void createKeyListeners() {
     ControlsManager* cm = ControlsManager::getInstance();
     cm->addBinding(ACCELERATE, new KeyboardButton(sf::Keyboard::W, sf::Keyboard::S));
     cm->addBinding(TURN, new KeyboardButton(sf::Keyboard::D, sf::Keyboard::A));
+    cm->addBinding(RESPAWN, new KeyboardButton(sf::Keyboard::BackSpace));
 }
 
 void loadWorld() {
@@ -191,9 +192,10 @@ std::vector<char> split(const std::string &str) {
 void createPlayer(std::shared_ptr<ShaderProgram> standardShader, int x, int y){
     std::shared_ptr<IMesh> playerMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/rally_car.obj");
     std::shared_ptr<GameObject> gameObject = std::make_shared<GameObject>(playerMesh);
-    gameObject->setLocation(chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y));
+    const chag::SmallVector3<float> &location = chag::make_vector(-tileWidth * x, 0.0f, -tileWidth * y);
+    gameObject->setLocation(location);
     gameObject->update(0.0f);
-    gameObject->addComponent(new PlayerController(tiles, tileWidth));
+    gameObject->addComponent(new PlayerController(tiles, tileWidth, location));
     StandardRenderer* stdrenderer = new StandardRenderer(playerMesh, standardShader);
     gameObject->addRenderComponent(stdrenderer);
     gameObject->setDynamic(true);

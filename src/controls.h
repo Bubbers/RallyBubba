@@ -7,7 +7,8 @@
 
 enum Controls : int {
     ACCELERATE,
-    TURN
+    TURN,
+    RESPAWN
 };
 
 #endif //HALLSOFBUBBA_CONTROLS_H_H
