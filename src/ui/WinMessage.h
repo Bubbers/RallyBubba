@@ -7,7 +7,7 @@
 
 class WinMessage: public PositioningLayout {
 public:
-    WinMessage(float elapsedTimeSeconds);
+    WinMessage(float elapsedTimeSeconds, std::function<void ()> restartFunc);
 private:
 };
 

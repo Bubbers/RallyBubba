@@ -158,7 +158,6 @@ void loadWorld() {
     createTimeDisplayer();
 
     createLight();
-    createKeyListeners();
 
     // Make sure it is zero when we start
     winTimeClock->restart();
@@ -322,7 +321,7 @@ void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int
     gameObject->addRenderComponent(stdrenderer);
     gameObject->setIdentifier(COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
 
-    gameObject->addComponent(new WinOnCollisionComponentAndCheckpointsDone(checkpoints, scene, winTimeClock));
+    gameObject->addComponent(new WinOnCollisionComponentAndCheckpointsDone(checkpoints, scene, winTimeClock, loadMenu));
 
     scene->addShadowCaster(gameObject);
 }
@@ -370,6 +369,7 @@ int main() {
     renderer.setBackgroundColor(chag::make_vector(0.0f,0.0f,0.0f));
     renderer.initRenderer(SCREEN_WIDTH, SCREEN_HEIGHT);
 
+    createKeyListeners();
     initTiles();
     camera = new TopDownCamera(chag::make_vector(-(float)tiles->at(0).size(), 0.0f, -(float)tiles->size()), SCREEN_WIDTH, SCREEN_HEIGHT);
 

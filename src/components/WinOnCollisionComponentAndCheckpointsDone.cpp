@@ -8,11 +8,13 @@
 WinOnCollisionComponentAndCheckpointsDone::WinOnCollisionComponentAndCheckpointsDone(
         std::shared_ptr<std::vector<bool>> checkpoints,
         std::shared_ptr<Scene> scene,
-        std::shared_ptr<sf::Clock> clock) {
+        std::shared_ptr<sf::Clock> clock,
+        std::function<void ()> func) {
     this->checkpoints = checkpoints;
     this->scene = scene;
     this->clock = clock;
     this->has_won = false;
+    this->func = func;
 }
 
 void WinOnCollisionComponentAndCheckpointsDone::beforeCollision(std::shared_ptr<GameObject> collider) {
@@ -28,12 +30,12 @@ void WinOnCollisionComponentAndCheckpointsDone::beforeCollision(std::shared_ptr<
         }
     }
 
-    if (hasAllCheckpoints) {
+    if (!hasAllCheckpoints) {
         this->has_won = true;
 
         std::shared_ptr<GameObject> hudObj = std::make_shared<GameObject>();
         auto winScreenRenderer = new HudRenderer();
-        winScreenRenderer->setLayout(new WinMessage(clock->getElapsedTime().asSeconds()));
+        winScreenRenderer->setLayout(new WinMessage(clock->getElapsedTime().asSeconds(), func));
 
         hudObj->addRenderComponent(winScreenRenderer );
         scene->addTransparentObject(hudObj);

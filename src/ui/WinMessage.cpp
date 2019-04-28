@@ -5,8 +5,10 @@
 #include <ListLayout.h>
 #include "WinMessage.h"
 #include "HUDGraphic.h"
+#include "PlayButton.h"
+#include "RestartButton.h"
 
-WinMessage::WinMessage(float elapsedTimeSeconds): PositioningLayout(Dimension::fromPercentage(100.0f), Dimension::fromPercentage(100.0f)) {
+WinMessage::WinMessage(float elapsedTimeSeconds, std::function<void ()> restartFunc): PositioningLayout(Dimension::fromPercentage(100.0f), Dimension::fromPercentage(100.0f)) {
     Font* ubuntuFont28 = FontManager::getInstance()->loadAndFetchFont("../fonts/Ubuntu-M.ttf", 28);
 
 
@@ -24,6 +26,8 @@ WinMessage::WinMessage(float elapsedTimeSeconds): PositioningLayout(Dimension::f
     smallerMenu->addChild(timeText, Dimension::fromPercentagePlusPixels(50.0f, -100), Dimension::fromPercentage(50.0f));
 
     addChild(smallerMenu, Dimension::fromPercentage(15), Dimension::fromPercentage(15));
+
+    addChild(new RestartButton(restartFunc), Dimension::fromPercentagePlusPixels(50.0f, -100), Dimension::fromPercentagePlusPixels(70.0f, -20));
 
 
 }
