@@ -138,6 +138,13 @@ void createLight() {
     pointLight->ambientColor= chag::make_vector(0.050f,0.050f,0.050f);
     pointLight->position = chag::make_vector(18.0f, 3.0f, 0.0f);
     scene->pointLights.push_back(pointLight);
+
+    std::shared_ptr<PointLight> pointLight2 = std::make_shared<PointLight>();
+    pointLight2->diffuseColor= chag::make_vector(0.50f,0.50f,0.50f);
+    pointLight2->specularColor= chag::make_vector(0.00f,0.00f,0.00f);
+    pointLight2->ambientColor= chag::make_vector(0.050f,0.050f,0.050f);
+    pointLight2->position = chag::make_vector(50.0f, 3.0f, 0.0f);
+    scene->pointLights.push_back(pointLight2);
 }
 
 void createKeyListeners() {
@@ -259,6 +266,7 @@ void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader) {
     std::shared_ptr<IMesh> mountainCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/mountain_collision.obj");
     std::shared_ptr<IMesh> forestMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/forest_vertical.obj");
     std::shared_ptr<IMesh> forestCollisionMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/forest_vertical_collision.obj");
+    std::shared_ptr<IMesh> windmillMesh = ResourceManager::loadAndFetchMesh("../assets/meshes/WINDMILL.fbx");
 
     for (int y = 0; y < tiles.get()->size(); y++) {
         for (int x = 0; x < ((*tiles.get())[y]).size(); x++) {
@@ -286,7 +294,9 @@ void createObjectTiles(const std::shared_ptr<ShaderProgram> &standardShader) {
                 createCheckpoint(standardShader, x, y);
             } else if (tile == 'G'){
                 createGoal(standardShader, x, y);
-
+            } else if (tile == '*') {
+                createTile(standardShader, y, x, windmillMesh, windmillMesh, false, true,
+                           COLLIDABLE_AND_COLLISION_IDENTIFIER);
             }
         }
     }
