@@ -278,7 +278,7 @@ void createGoal(const std::shared_ptr<ShaderProgram> &standardShader, int x, int
     gameObject->addRenderComponent(stdrenderer);
     gameObject->setIdentifier(COLLIDABLE_BUT_NO_COLLISION_IDENTIFIER);
 
-    gameObject->addComponent(new WinOnCollisionComponentAndCheckpointsDone(checkpoints));
+    gameObject->addComponent(new WinOnCollisionComponentAndCheckpointsDone(checkpoints, scene));
 
     scene->addShadowCaster(gameObject);
 }
